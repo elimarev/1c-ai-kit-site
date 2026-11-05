@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подготовка ИИ к работе с 1С</title>
+<meta name="description" content="С чего начать новому сотруднику: инструкция, репозитории и шаги настройки Claude Code, Codex или Cursor для работы с 1С.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f5c56'/%3E%3Cpath d='M8 17l5 5 11-12' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --ink: #1d2422;
+  --muted: #5a6562;
+  --line: #dedbd2;
+  --accent: #0f5c56;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2efec;
+  --code-bg: #1f2826;
+  --code-ink: #eef3f1;
+  --warn-bg: #fbf1dc;
+  --warn-line: #e3c57f;
+  --warn-ink: #5e4510;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917;
+    --surface: #1c2321;
+    --ink: #e8edeb;
+    --muted: #a0aba7;
+    --line: #333d3a;
+    --accent: #5cc4b6;
+    --accent-ink: #0c1f1c;
+    --accent-soft: #1f3531;
+    --code-bg: #0e1312;
+    --code-ink: #e8edeb;
+    --warn-bg: #352b15;
+    --warn-line: #6d5a2b;
+    --warn-ink: #eedcae;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917;
+  --surface: #1c2321;
+  --ink: #e8edeb;
+  --muted: #a0aba7;
+  --line: #333d3a;
+  --accent: #5cc4b6;
+  --accent-ink: #0c1f1c;
+  --accent-soft: #1f3531;
+  --code-bg: #0e1312;
+  --code-ink: #e8edeb;
+  --warn-bg: #352b15;
+  --warn-line: #6d5a2b;
+  --warn-ink: #eedcae;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+code {
+  font: .92em Consolas, "Cascadia Mono", Menlo, monospace;
+  background: var(--accent-soft);
+  padding: .1em .35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+
+/* Шапка */
+.top { padding: 48px 0 36px; border-bottom: 1px solid var(--line); }
+.eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+h1 { margin: 0 0 14px; font-size: clamp(30px, 6vw, 44px); line-height: 1.12; letter-spacing: -.015em; font-weight: 700; }
+.lead { margin: 0 0 24px; max-width: 640px; font-size: 18px; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  display: inline-block;
+  padding: 11px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { color: var(--accent); }
+.meta { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
+
+/* Разделы */
+section { padding: 36px 0 8px; }
+h2 { margin: 0 0 6px; font-size: 25px; line-height: 1.25; letter-spacing: -.01em; }
+.sub { margin: 0 0 20px; color: var(--muted); }
+
+/* Выбор ИИ */
+.picker {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+  margin: 0 -16px 18px; padding: 10px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.picker > span { font-size: 14px; color: var(--muted); }
+.picker div { display: flex; gap: 6px; flex-wrap: wrap; }
+.picker button {
+  font: inherit; font-size: 15px;
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.picker button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.js[data-ai-now="claude"] [data-ai]:not([data-ai~="claude"]),
+.js[data-ai-now="codex"] [data-ai]:not([data-ai~="codex"]),
+.js[data-ai-now="cursor"] [data-ai]:not([data-ai~="cursor"]) { display: none; }
+html:not(.js) .picker { display: none; }
+
+/* Шаги */
+.notice {
+  padding: 14px 16px; margin-bottom: 14px;
+  border: 1px solid var(--warn-line); border-radius: 10px;
+  background: var(--warn-bg); color: var(--warn-ink);
+}
+.notice strong { display: block; margin-bottom: 2px; }
+.notice p { margin: 0; }
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+.steps > li {
+  counter-increment: s;
+  position: relative;
+  padding: 16px 0 18px 48px;
+  border-top: 1px solid var(--line);
+}
+.steps > li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: 16px;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-weight: 700;
+}
+.steps > li.key::before { background: var(--accent); color: var(--accent-ink); }
+.steps h3 { margin: 3px 0 6px; font-size: 18px; line-height: 1.3; }
+.steps p { margin: 0 0 10px; }
+.steps p:last-child { margin-bottom: 0; }
+.steps ul { margin: 0 0 10px; padding-left: 20px; }
+.note { color: var(--muted); font-size: 15px; }
+
+/* Команды */
+.cmd {
+  display: flex; align-items: stretch;
+  margin: 0 0 10px;
+  border-radius: 8px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.cmd code {
+  flex: 1; min-width: 0;
+  padding: 11px 14px;
+  background: none; color: var(--code-ink);
+  font-size: 14.5px;
+  overflow-wrap: anywhere;
+}
+.cmd button {
+  flex: none;
+  padding: 0 14px;
+  border: 0; border-left: 1px solid rgba(255,255,255,.16);
+  background: none; color: var(--code-ink);
+  font: inherit; font-size: 14px;
+  cursor: pointer;
+}
+.cmd button:hover { background: rgba(255,255,255,.1); }
+.cmd.big code { font-size: 17px; font-weight: 600; }
+
+/* Карточки */
+.cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); }
+.card {
+  display: flex; flex-direction: column;
+  padding: 16px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.card:hover { border-color: var(--accent); }
+.card strong { color: var(--accent); font-size: 17px; overflow-wrap: anywhere; }
+.card span { margin-top: 4px; font-size: 15px; color: var(--muted); flex: 1; }
+.card small { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.hint { margin: 14px 0 0; font-size: 15px; color: var(--muted); }
+
+/* Таблица */
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 15px; }
+th, td { padding: 10px 12px; text-align: left; border: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; background: var(--accent-soft); }
+td code { white-space: nowrap; }
+
+/* Правила и вопросы */
+.rules { margin: 0; padding-left: 22px; }
+.rules li { margin-bottom: 7px; }
+details { border-top: 1px solid var(--line); }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+summary { padding: 12px 0; font-weight: 600; cursor: pointer; }
+details p { margin: 0 0 14px; }
+
+footer { margin-top: 44px; padding: 22px 0 40px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+footer p { margin: 0 0 6px; }
+
+@media (max-width: 560px) {
+  .top { padding-top: 32px; }
+  .lead { font-size: 17px; }
+  .btn { flex: 1 1 100%; text-align: center; }
+  .steps > li { padding-left: 42px; }
+  .cmd { flex-direction: column; }
+  .cmd button { padding: 8px 14px; border-left: 0; border-top: 1px solid rgba(255,255,255,.16); text-align: center; }
+}
+</style>
+<script>document.documentElement.classList.add('js');document.documentElement.dataset.aiNow='claude';</script>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Для новых сотрудников команды 1С</p>
+    <h1>Подготовка ИИ к&nbsp;работе с&nbsp;1С</h1>
+    <p class="lead">Вся настройка начинается отсюда. Ваш ИИ получит правила команды и навыки 1С, а база знаний окажется у вас на компьютере.</p>
+    <div class="actions">
+      <a class="btn primary" href="#start">Начать настройку</a>
+      <a class="btn ghost" href="files/podgotovka-ii-1c.docx" download="Инструкция - Подготовка ИИ к работе с 1С.docx">Скачать инструкцию (Word)</a>
+    </div>
+    <p class="meta">Один раз на компьютер, 30–60 минут. Большую часть делает сам ИИ, программировать не требуется.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="links">
+  <h2>Всё нужное</h2>
+  <p class="sub">Инструкция открыта всем, репозитории приватные.</p>
+  <div class="cards">
+    <a class="card" href="files/podgotovka-ii-1c.docx" download="Инструкция - Подготовка ИИ к работе с 1С.docx">
+      <strong>Инструкция в Word</strong>
+      <span>Все шаги подробно, 5 страниц. Можно распечатать или переслать.</span>
+      <small>Открыта всем</small>
+    </a>
+    <a class="card" href="https://github.com/elimarev/1c-ai-kit">
+      <strong>1c-ai-kit</strong>
+      <span>Набор: установщик, правила команды, команды для ИИ, шаблоны.</span>
+      <small>Нужен доступ</small>
+    </a>
+    <a class="card" href="https://github.com/elimarev/1c-knowledge-team">
+      <strong>1c-knowledge-team</strong>
+      <span>База знаний: разобранные ошибки, примеры, справочник по 1С.</span>
+      <small>Нужен доступ</small>
+    </a>
+    <a class="card" href="https://github.com/elimarev/1c-ai-kit/tree/main/templates">
+      <strong>Шаблоны проектов и документов</strong>
+      <span>Обработки и отчёты, расширения, ТЗ, протокол проверки, инструкция пользователя.</span>
+      <small>Нужен доступ</small>
+    </a>
+    <a class="card" href="https://github.com/elimarev/1c-ai-kit/tree/main/docs">
+      <strong>Документация набора</strong>
+      <span>Плагины и коннекторы, схема репозиториев, обновление набора.</span>
+      <small>Нужен доступ</small>
+    </a>
+  </div>
+  <p class="hint">Без доступа GitHub показывает ошибку 404, даже если вы вошли в аккаунт. Это значит, что вас ещё не добавили или вы не приняли приглашение.</p>
+</section>
+
+<section id="start">
+  <h2>Настройка по шагам</h2>
+  <p class="sub">Номера шагов совпадают с инструкцией в Word.</p>
+
+  <div class="notice">
+    <strong>Перед началом</strong>
+    <p>Заведите аккаунт на GitHub и сообщите его имя руководителю. Он добавит вас в репозитории <code>1c-ai-kit</code> и <code>1c-knowledge-team</code>. Приглашение придёт на почту, его нужно принять. Ещё понадобятся компьютер с Windows и права на установку программ.</p>
+  </div>
+
+  <div class="picker" role="group" aria-label="Выбор ИИ">
+    <span>Какой у вас ИИ:</span>
+    <div>
+      <button type="button" data-pick="claude" aria-pressed="true">Claude Code</button>
+      <button type="button" data-pick="codex" aria-pressed="false">Codex</button>
+      <button type="button" data-pick="cursor" aria-pressed="false">Cursor</button>
+    </div>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <h3>Поставить свой ИИ</h3>
+      <p data-ai="claude">Аккаунт на <a href="https://claude.ai">claude.ai</a> с подпиской Pro или Max (Max, если работаете с ИИ весь день). Приложение с <a href="https://claude.ai/download">claude.ai/download</a>, вход, вкладка Code слева.</p>
+      <p data-ai="codex">Приложение или терминальная версия OpenAI Codex, вход в свой аккаунт.</p>
+      <p data-ai="cursor">Редактор с <a href="https://cursor.com">cursor.com</a>, вход в свой аккаунт. Чат агента открывается клавишами Ctrl+L.</p>
+    </li>
+    <li>
+      <h3>Поставить Git и скачать набор</h3>
+      <p>Откройте PowerShell: меню «Пуск», введите PowerShell. Если Git ещё нет, выполните:</p>
+      <div class="cmd"><code>winget install -e --id Git.Git</code><button type="button">Копировать</button></div>
+      <p>Закройте окно PowerShell, откройте заново и скачайте набор:</p>
+      <div class="cmd"><code>git clone https://github.com/elimarev/1c-ai-kit C:\workspace\1c-ai-kit</code><button type="button">Копировать</button></div>
+      <p class="note">При первом скачивании Git попросит войти в GitHub. Войдите в браузере под своим аккаунтом.</p>
+    </li>
+    <li>
+      <h3>Открыть папку набора в ИИ</h3>
+      <p data-ai="claude">Вкладка Code, выбрать папку <code>C:\workspace\1c-ai-kit</code>.</p>
+      <p data-ai="codex">Открыть в приложении папку <code>C:\workspace\1c-ai-kit</code> как проект. В терминале: перейти в эту папку и запустить <code>codex</code>.</p>
+      <p data-ai="cursor">File → Open Folder, папка <code>C:\workspace\1c-ai-kit</code>, затем новый чат (Ctrl+L).</p>
+      <p class="note">В списке файлов должны быть папки <code>setup</code> и <code>claude</code>. Настройку запускайте только отсюда, не из папки проекта.</p>
+    </li>
+    <li class="key">
+      <h3>Попросить ИИ всё подготовить</h3>
+      <p>Напишите в чат одну фразу. Она одинаковая для всех трёх ИИ:</p>
+      <div class="cmd big"><code>Подготовь меня к работе с 1С</code><button type="button">Копировать</button></div>
+      <p>ИИ проверит компьютер, задаст 2–3 вопроса и покажет план. <strong>Без вашего «да» ничего не ставится.</strong> Затем установит навыки и правила и выведет список того, что нужно сделать руками.</p>
+      <p class="note">Если ИИ спрашивает разрешение запустить <code>install.ps1</code> или записать файлы в домашнюю папку, это нормально. Сверьте команду с планом и разрешите. Настройки безопасности самого ИИ менять не нужно.</p>
+    </li>
+    <li>
+      <h3>Подключить сервисы</h3>
+      <p data-ai="claude">GitHub обязательно, Notion и Google Drive по необходимости: claude.ai → Настройки → Коннекторы.</p>
+      <div data-ai="codex cursor">
+        <p>GitHub обязательно. Выполните команду; если <code>gh</code> нет, сначала <code>winget install -e --id GitHub.cli</code>:</p>
+        <div class="cmd"><code>gh auth login</code><button type="button">Копировать</button></div>
+        <p>Notion и Google Drive, если нужны для работы, подключаются в настройках самого ИИ.</p>
+      </div>
+      <p class="note">Подключения включаете вы сами: ИИ подскажет шаги, но пароли не вводит. Доступ давайте только к рабочему пространству команды, не к личным папкам.</p>
+    </li>
+    <li>
+      <h3>Базы 1С: только если работаете с ними на этом компьютере</h3>
+      <ul>
+        <li><strong>1c-mcp-bridge</strong>: метаданные и запросы, только чтение. Скачать <code>1cMcpBridge-Setup</code> со <a href="https://github.com/dimax27/1c-mcp-bridge/releases/latest">страницы выпусков</a> и запустить от администратора.</li>
+        <li><strong>1c-testpilot</strong>: открытие форм и сценарии в клиенте 1С. Его ставит сам ИИ, если вы ответите, что работаете с базами.</li>
+      </ul>
+      <p><strong>Подключайте только тестовые копии баз.</strong> Пароли к базам не пишите в чат и в файлы.</p>
+      <p class="note" data-ai="codex cursor">Поставили эти программы после основной настройки? Попросите ИИ: «Подключи установленные MCP».</p>
+    </li>
+    <li>
+      <h3>Проверить результат</h3>
+      <p>Перезапустите приложение ИИ, откройте ту же папку и вызовите проверку. Можно проще: написать «проверь окружение».</p>
+      <div class="cmd" data-ai="claude cursor"><code>/kit-check</code><button type="button">Копировать</button></div>
+      <div class="cmd" data-ai="codex"><code>$kit-check</code><button type="button">Копировать</button></div>
+      <p class="note">Всё получилось, если в таблице проверки нет обязательных пунктов со статусом «нет», а ИИ может назвать правила команды о рабочих базах.</p>
+    </li>
+    <li>
+      <h3>Начать работу над проектом</h3>
+      <p>Каждый клиентский проект живёт в отдельном приватном репозитории. Новый проект заводит сам ИИ:</p>
+      <div class="cmd" data-ai="claude cursor"><code>/new-project</code><button type="button">Копировать</button></div>
+      <div class="cmd" data-ai="codex"><code>$new-project</code><button type="button">Копировать</button></div>
+      <p class="note">Дальше открывайте в ИИ папку проекта, а не набора. Коллега с другим ИИ может работать в той же папке.</p>
+    </li>
+  </ol>
+</section>
+
+<section id="rules">
+  <h2>Правила, которые нельзя нарушать</h2>
+  <p class="sub">Действуют с первого дня.</p>
+  <ol class="rules">
+    <li>Не подключать рабочие базы клиентов к ИИ и ничего в них не менять.</li>
+    <li>Не проводить, не перепроводить и не удалять документы без разрешения, даже в тестовой копии.</li>
+    <li>Не отправлять данные клиентов, выгрузки баз и пароли во внешние сервисы и чужие чаты.</li>
+    <li>Репозитории проектов только приватные. Пароли и токены не хранить в репозиториях.</li>
+    <li>В общую базу знаний только обезличенные случаи: без названий клиентов, людей, товаров и номеров документов.</li>
+    <li>Если ИИ сказал, что что-то проверено, спросите, чем именно. Окончательно результат принимаете вы.</li>
+  </ol>
+</section>
+
+<section id="diff">
+  <h2>Чем отличаются ИИ</h2>
+  <p class="sub">Подходит любой из трёх, проект рассчитан на все.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Что</th><th>Claude Code</th><th>Codex</th><th>Cursor</th></tr></thead>
+      <tbody>
+        <tr><td>Навыки 1С и правила команды</td><td>есть</td><td>есть</td><td>есть</td></tr>
+        <tr><td>Правила вне папки проекта</td><td>действуют</td><td>действуют</td><td>нет, только в проекте</td></tr>
+        <tr><td>Вызов команд</td><td><code>/имя</code></td><td><code>$имя</code></td><td><code>/имя</code></td></tr>
+        <tr><td>Плагин проверки кода BSL</td><td>есть</td><td>нет</td><td>нет</td></tr>
+        <tr><td>Агенты 1c-lookup, 1c-developer, 1c-analyst</td><td>есть</td><td>нет</td><td>нет</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="help">
+  <h2>Если что-то пошло не так</h2>
+  <p class="sub">Не получается за 15 минут? Напишите руководителю и приложите текст ошибки, но без паролей и данных клиентов.</p>
+  <details><summary>git clone пишет Repository not found</summary><p>Нет доступа. Примите приглашение GitHub на почте или попросите руководителя добавить вас.</p></details>
+  <details><summary>Команда git не найдена</summary><p>Закройте и снова откройте PowerShell. Не помогло: повторите установку Git из шага 2.</p></details>
+  <details><summary>ИИ предлагает Docker, ffmpeg и другие посторонние программы</summary><p>Вы не в папке набора или сработал другой навык. Откройте <code>C:\workspace\1c-ai-kit</code> в новом чате и напишите: «Прочитай claude/commands/onboard.md и выполни».</p></details>
+  <details><summary>ИИ не понимает фразу или нет команды onboard</summary><p>Напишите: «Прочитай claude/commands/onboard.md и выполни».</p></details>
+  <details><summary>python открывает Microsoft Store</summary><p>Выполните <code>winget install -e --id Python.Python.3.12</code> и перезапустите приложение ИИ.</p></details>
+  <details><summary>«Выполнение сценариев отключено»</summary><p>Запускайте так, как предлагает ИИ: <code>powershell -ExecutionPolicy Bypass -File ...</code>. Настройки Windows менять не нужно.</p></details>
+  <details><summary>Ошибка доступа к .agents или .codex при установке</summary><p>ИИ работает в защищённом режиме. Разрешите ему эту команду или запустите её сами в PowerShell: ИИ подскажет какую.</p></details>
+  <details><summary>База знаний не скачалась</summary><p>Нет доступа к <code>1c-knowledge-team</code>. Попросите руководителя добавить вас и снова запустите настройку.</p></details>
+  <details><summary>Не работает проверка BSL в Claude Code</summary><p>Нужна Java 21: <code>winget install -e --id EclipseAdoptium.Temurin.21.JDK</code>.</p></details>
+  <details><summary>Не видно инструментов базы 1С</summary><p>Не поставлен 1c-mcp-bridge, см. шаг 6. В Claude Code и Codex при открытии проекта подтвердите доверие к нему.</p></details>
+</section>
+
+<section id="update">
+  <h2>Как обновлять</h2>
+  <p class="sub">Когда руководитель сообщит о новой версии набора, выполните команду, затем откройте папку набора в ИИ и напишите «Обнови настройку».</p>
+  <div class="cmd"><code>git -C C:\workspace\1c-ai-kit pull</code><button type="button">Копировать</button></div>
+  <p class="note">Файлы, которые вы меняли у себя, не затираются: ИИ покажет разницу и спросит.</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Эта страница открыта всем, поэтому здесь нет клиентских данных, паролей и содержимого базы знаний. Всё рабочее лежит в приватных репозиториях.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var buttons = document.querySelectorAll('[data-pick]');
+
+  function pick(name) {
+    root.dataset.aiNow = name;
+    buttons.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.pick === name));
+    });
+    try { localStorage.setItem('kit-ai', name); } catch (e) {}
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () { pick(b.dataset.pick); });
+  });
+
+  try {
+    var saved = localStorage.getItem('kit-ai');
+    if (saved === 'claude' || saved === 'codex' || saved === 'cursor') pick(saved);
+  } catch (e) {}
+
+  function fallbackCopy(text) {
+    var area = document.createElement('textarea');
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    area.remove();
+    return ok;
+  }
+
+  document.querySelectorAll('.cmd button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentNode.querySelector('code');
+      var text = code.textContent;
+      function done(ok) {
+        if (!ok) {
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        btn.textContent = ok ? 'Скопировано' : 'Нажмите Ctrl+C';
+        setTimeout(function () { btn.textContent = 'Копировать'; }, 2500);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallbackCopy(text)); });
+      } else {
+        done(fallbackCopy(text));
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
